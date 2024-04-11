@@ -7,7 +7,7 @@ import json
 from datetime import datetime, timedelta, timezone
 import requests
 
-TOKEN = '[API_KEY]'
+TOKEN = '[API KEY]'
 bot = telebot.TeleBot(TOKEN)
 data_file = './user_data.json'
 user_states = {}
