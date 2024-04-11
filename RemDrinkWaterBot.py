@@ -117,9 +117,9 @@ def fact_message(message):
 @bot.message_handler(commands=['settime'])
 def settime_message(message):
     chat_id = message.chat.id
-    bot.send_message(chat_id,
-                     "Укажите время для напоминаний в формате ЧЧ:ММ, разделите время запятой (например, 09:00,14:00,"
-                     "18:00):")
+    safe_send_message(chat_id,
+                      "Укажите время для напоминаний в формате ЧЧ:ММ, разделите время запятой (например, 09:00,14:00,"
+                      "18:00):")
     user_states[chat_id] = 'SETTING_TIME'
 
 
@@ -134,7 +134,7 @@ def settime_reply(message):
 @bot.message_handler(commands=['timezone'])
 def timezone_message(message):
     chat_id = message.chat.id
-    bot.send_message(chat_id, "Укажите ваш часовой пояс относительно UTC (например, +3 или -5):")
+    safe_send_message(chat_id, "Укажите ваш часовой пояс относительно UTC (например, +3 или -5):")
     user_states[chat_id] = 'SETTING_TIMEZONE'
 
 
@@ -153,7 +153,7 @@ def timezone_reply(message):
 @bot.message_handler(commands=['goal'])
 def goal_message(message):
     chat_id = message.chat.id
-    bot.send_message(chat_id, "Укажите вашу цель по потреблению воды за день в литрах:")
+    safe_send_message(chat_id, "Укажите вашу цель по потреблению воды за день в литрах:")
     user_states[chat_id] = 'SETTING_GOAL'
 
 
@@ -172,9 +172,9 @@ def goal_reply(message):
 @bot.message_handler(commands=['dnd'])
 def dnd_message(message):
     chat_id = message.chat.id
-    bot.send_message(chat_id,
-                     "Укажите время для режима 'Не беспокоить' в формате ЧЧ:ММ-ЧЧ:ММ (например, 22:00-07:00). "
-                     "Отправьте 'выкл', чтобы отключить режим:")
+    safe_send_message(chat_id,
+                      "Укажите время для режима 'Не беспокоить' в формате ЧЧ:ММ-ЧЧ:ММ (например, 22:00-07:00). "
+                      "Отправьте 'выкл', чтобы отключить режим:")
     user_states[chat_id] = 'SETTING_DND'
 
 
@@ -230,6 +230,18 @@ def is_within_dnd_period(user_local_time, dnd_start, dnd_end):
     return start_time <= user_local_time <= end_time
 
 
+def safe_send_message(chat_id, text):
+    try:
+        bot.send_message(chat_id, text)
+    except telebot.apihelper.ApiTelegramException as e:
+        if e.error_code == 403:  # Forbidden: bot was blocked by the user
+            print(f"Не удалось отправить сообщение: пользователь {chat_id} заблокировал бота.")
+        else:
+            print(f"Ошибка при отправке сообщения пользователю {chat_id}: {e}")
+    except Exception as e:
+        print(f"Неожиданная ошибка при отправке сообщения пользователю {chat_id}: {e}")
+
+
 def send_reminders():
     global reminder_thread_running
     while True:
@@ -250,7 +262,7 @@ def send_reminders():
 
             user_local_time_str = user_local_time.strftime('%H:%M')
             if user_local_time_str in reminders:
-                bot.send_message(chat_id, "Напоминание: выпей стакан воды!")
+                safe_send_message(chat_id, "Напоминание: выпей стакан воды!")
 
         time.sleep(60)  # Проверяем каждую минуту
 
